@@ -1,0 +1,38 @@
+# Python related
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+*.egg
+*.log
+*.pot
+*.pyc
+
+# Django related
+*.log
+*.pot
+*.db
+db.sqlite3
+media/  # if you are using this folder for uploaded files
+
+# Virtual environment
+myvenv/
+venv/
+ENV/
+
+# Database
+*.sqlite3
+
+# IDEs and text editors
+*.swp
+*.swo
+*.swn
+*.idea/
+*.vscode/
+
+# OS generated
+.DS_Store
+Thumbs.db
+
+# Other
+*.bak
