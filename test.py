@@ -7,6 +7,8 @@ from googleapiclient.discovery import build
 # Set up your client_secrets.json path (downloaded from Google Cloud Console)
 CLIENT_SECRETS_FILE = "client_secret.json"
 
+STYLE = {"byClass": False, "period": 0}
+
 # Define the necessary scopes
 SCOPES = [
     "https://www.googleapis.com/auth/classroom.courses.readonly",
@@ -125,9 +127,10 @@ def get_student_average_by_category(service, course_id):
             total_major_percent += major_average_percent
             total_minor_percent += minor_average_percent
 
-            # print(f"{student_name}:")
-            # print(f"  - Major Average Percent: {major_average_percent:.2f}%")
-            # print(f"  - Minor Average Percent: {minor_average_percent:.2f}%")
+            if STYLE.get("byClass", True) is True:
+                print(f"{student_name}:")
+                print(f"  - Major Average Percent: {major_average_percent:.2f}%")
+                print(f"  - Minor Average Percent: {minor_average_percent:.2f}%")
 
         class_major_avg = total_major_percent / len(students) if students else 0
         class_minor_avg = total_minor_percent / len(students) if students else 0
@@ -170,16 +173,17 @@ def main():
         print("No courses found.")
         return
 
-    # # To test 1 course
-    # course = courses[0]
-    # course_id = course['id']
-    # get_student_average_by_category(service, course_id)
-
-    for course in courses:
-        print("Course:", course["name"], course.get("section", "no Section Listed"))
+    if STYLE.get("byClass", True) is True:
+        # To test 1 course
+        course = courses[4 - STYLE.get("period", 0)]
         course_id = course["id"]
         get_student_average_by_category(service, course_id)
-        print("-------------------")
+    else:
+        for course in courses:
+            print("Course:", course["name"], course.get("section", "no Section Listed"))
+            course_id = course["id"]
+            get_student_average_by_category(service, course_id)
+            print("-------------------")
 
 
 if __name__ == "__main__":
