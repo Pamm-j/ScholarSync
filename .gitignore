@@ -36,3 +36,5 @@ Thumbs.db
 
 # Other
 *.bak
+client_secret.json
+token.json
