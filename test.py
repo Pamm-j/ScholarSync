@@ -7,7 +7,7 @@ from googleapiclient.discovery import build
 # Set up your client_secrets.json path (downloaded from Google Cloud Console)
 CLIENT_SECRETS_FILE = "client_secret.json"
 
-STYLE = {"byClass": False, "period": 0}
+DETAILS = {"byClass": False, "period": 4, 'student':"name"}
 
 # Define the necessary scopes
 SCOPES = [
@@ -127,7 +127,7 @@ def get_student_average_by_category(service, course_id):
             total_major_percent += major_average_percent
             total_minor_percent += minor_average_percent
 
-            if STYLE.get("byClass", True) is True:
+            if DETAILS.get("byClass", True) is True:
                 print(f"{student_name}:")
                 print(f"  - Major Average Percent: {major_average_percent:.2f}%")
                 print(f"  - Minor Average Percent: {minor_average_percent:.2f}%")
@@ -173,9 +173,9 @@ def main():
         print("No courses found.")
         return
 
-    if STYLE.get("byClass", True) is True:
+    if DETAILS.get("byClass", True) is True:
         # To test 1 course
-        course = courses[4 - STYLE.get("period", 0)]
+        course = courses[4 - DETAILS.get("period", 0)]
         course_id = course["id"]
         get_student_average_by_category(service, course_id)
     else:
