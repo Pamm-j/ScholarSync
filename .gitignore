@@ -1,5 +1,5 @@
 # Python related
-__pycache__/
+__pycache__
 *.py[cod]
 *.pyo
 *.egg-info/
@@ -7,6 +7,7 @@ __pycache__/
 *.log
 *.pot
 *.pyc
+
 
 # Django related
 *.log
@@ -19,8 +20,10 @@ media/  # if you are using this folder for uploaded files
 myvenv/
 venv/
 ENV/
+.env
 
 # Database
+db.sqlite3
 *.sqlite3
 
 # IDEs and text editors
@@ -38,3 +41,22 @@ Thumbs.db
 *.bak
 client_secret.json
 token.json
+._*
+.DS_Store
+.fseventsd
+.Spotlight-V100
+
+# Static folder at project root
+/static/
+
+
+# Windows
+Thumbs.db*
+ehthumbs*.db
+[Dd]esktop.ini
+$RECYCLE.BIN/
+
+# Visual Studio
+.vscode/
+.history/
+*.code-workspace
