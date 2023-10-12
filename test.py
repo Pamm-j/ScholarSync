@@ -7,7 +7,7 @@ from googleapiclient.discovery import build
 # Set up your client_secrets.json path (downloaded from Google Cloud Console)
 CLIENT_SECRETS_FILE = "client_secret.json"
 
-DETAILS = {"byClass": False, "period": 4, 'student':"name"}
+DETAILS = {"byClass": False, "period": 1, "student": "name"}
 
 # Define the necessary scopes
 SCOPES = [
