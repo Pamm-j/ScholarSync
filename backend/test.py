@@ -4,10 +4,14 @@ from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 
+from concurrent.futures import ThreadPoolExecutor
+from googleapiclient.errors import HttpError
+
+
 # Set up your client_secrets.json path (downloaded from Google Cloud Console)
 CLIENT_SECRETS_FILE = "client_secret.json"
 
-DETAILS = {"byClass": False, "period": 1, "student": "name"}
+DETAILS = {"byClass": True, "period": 4, "student": "name"}
 
 # Define the necessary scopes
 SCOPES = [
@@ -16,6 +20,50 @@ SCOPES = [
     "https://www.googleapis.com/auth/classroom.coursework.students",
     "https://www.googleapis.com/auth/classroom.student-submissions.students.readonly",
 ]
+
+class Grade:
+    """Student grades used to represent a google classroom grade"""
+    def __init__(self, score, possible_points):
+        self.score = score
+        self.possible_points = possible_points
+
+    def get_letter_grade(self):
+        percent = self.score / self.possible_points
+        if percent >= 0.9:
+            return 'A'
+        if percent >= 0.8:
+            return 'B'
+        if percent >= 0.7:
+            return 'C'
+        if percent >= 0.6:
+            return 'D'
+        return 'F'
+    
+    def __str__(self):
+        return self.get_letter_grade()
+    
+
+
+class StudentReport:
+    def __init__(self, name, email):
+        self.name = name
+        self.email = email
+        self.major_grades = []
+        self.minor_grades = []
+
+    def add_major_grade(self, grade):
+        self.major_grades.append(grade)
+
+    def add_minor_grade(self, grade):
+        self.minor_grades.append(grade)
+
+    def to_dict(self):
+        return {
+            "student_name": self.name,
+            "student_email": self.email,
+            "major_grades": [str(grade) for grade in self.major_grades],
+            "minor_grades": [str(grade) for grade in self.minor_grades]
+        }
 
 
 def get_credentials():
@@ -32,9 +80,32 @@ def get_credentials():
     return credentials
 
 
+def fetch_submissions_for_assignment(service, course_id, assignment, student_report):
+    try:
+        max_points = assignment.get("maxPoints", 100)
+        submissions = (
+            service.courses()
+            .courseWork()
+            .studentSubmissions()
+            .list(courseId=course_id, courseWorkId=assignment["id"], userId=student_report.email)
+            .execute()
+            .get("studentSubmissions", [])
+        )
+
+        for submission in submissions:
+            score = submission.get("assignedGrade")
+            if score is not None:
+                grade = Grade(score, max_points)
+                if assignment.get("gradeCategory", {}).get("name") == "Major":
+                    student_report.add_major_grade(grade)
+                else:
+                    student_report.add_minor_grade(grade)
+    except Exception as e:
+        # Here you can log the error or print it for debugging
+        print(f"Error fetching submissions for assignment {assignment['id']}: {str(e)}")
+
 def get_student_average_by_category(service, course_id):
     try:
-        # Fetch assignments (course work) for the specified course
         assignments = (
             service.courses()
             .courseWork()
@@ -42,16 +113,11 @@ def get_student_average_by_category(service, course_id):
             .execute()
             .get("courseWork", [])
         )
+    except Exception as e:
+        print(f"Failed fetching assignments: {e}")
+        return
 
-        # Separate assignments into Major and Minor categories
-        major_assignments = [
-            a for a in assignments if a.get("gradeCategory", {}).get("name") == "Major"
-        ]
-        minor_assignments = [
-            a for a in assignments if a.get("gradeCategory", {}).get("name") == "Minor"
-        ]
-
-        # Fetch students
+    try:
         students = (
             service.courses()
             .students()
@@ -59,104 +125,33 @@ def get_student_average_by_category(service, course_id):
             .execute()
             .get("students", [])
         )
+    except Exception as e:
+        print(f"Failed fetching students: {e}")
+        return
 
-        total_major_percent = 0
-        total_minor_percent = 0
+    reports = []
 
+    with ThreadPoolExecutor(max_workers=1) as executor:
         for student in students:
             student_name = student["profile"]["name"]["fullName"]
+            student_email = student["profile"].get("emailAddress", "none")
+            student_report = StudentReport(student_name, student_email)
+            
+            futures = [
+                executor.submit(fetch_submissions_for_assignment, service, course_id, assignment, student_report)
+                for assignment in assignments
+            ]
 
-            major_percents = []
-            minor_percents = []
+            # Ensure all threads for the current student are completed
+            for future in futures:
+                try:
+                    future.result()
+                except Exception as e:
+                    print(f"Error processing submission for {student_name}: {e}")
 
-            for assignment in major_assignments:
-                max_points = assignment.get(
-                    "maxPoints", 100
-                )  # Defaulting to 100 if maxPoints is not found
+            reports.append(student_report.to_dict())
 
-                submissions = (
-                    service.courses()
-                    .courseWork()
-                    .studentSubmissions()
-                    .list(
-                        courseId=course_id,
-                        courseWorkId=assignment["id"],
-                        userId=student["userId"],
-                    )
-                    .execute()
-                    .get("studentSubmissions", [])
-                )
-
-                for submission in submissions:
-                    score = submission.get("assignedGrade")
-                    if score is not None:
-                        percent = (score / max_points) * 100
-                        major_percents.append(percent)
-
-            for assignment in minor_assignments:
-                max_points = assignment.get(
-                    "maxPoints", 100
-                )  # Defaulting to 100 if maxPoints is not found
-
-                submissions = (
-                    service.courses()
-                    .courseWork()
-                    .studentSubmissions()
-                    .list(
-                        courseId=course_id,
-                        courseWorkId=assignment["id"],
-                        userId=student["userId"],
-                    )
-                    .execute()
-                    .get("studentSubmissions", [])
-                )
-
-                for submission in submissions:
-                    score = submission.get("assignedGrade")
-                    if score is not None:
-                        percent = (score / max_points) * 100
-                        minor_percents.append(percent)
-
-            major_average_percent = (
-                sum(major_percents) / len(major_percents) if major_percents else 0
-            )
-            minor_average_percent = (
-                sum(minor_percents) / len(minor_percents) if minor_percents else 0
-            )
-
-            total_major_percent += major_average_percent
-            total_minor_percent += minor_average_percent
-
-            if DETAILS.get("byClass", True) is True:
-                print(f"{student_name}:")
-                print(f"  - Major Average Percent: {major_average_percent:.2f}%")
-                print(f"  - Minor Average Percent: {minor_average_percent:.2f}%")
-
-        class_major_avg = total_major_percent / len(students) if students else 0
-        class_minor_avg = total_minor_percent / len(students) if students else 0
-
-        print("\nClass Averages:")
-        print(f"  - Major Average Percent: {class_major_avg:.2f}%")
-        print(f"  - Minor Average Percent: {class_minor_avg:.2f}%")
-
-    except Exception as e:
-        print("Error:", e)
-
-
-def list_assignments(service, course_id):
-    try:
-        # Fetch assignments (course work) for the specified course
-        assignments = (
-            service.courses()
-            .courseWork()
-            .list(courseId=course_id)
-            .execute()
-            .get("courseWork", [])
-        )
-        for assignment in assignments:
-            print(json.dumps(assignment, indent=4))
-    except Exception as e:
-        print(f"Error occurred: {e}")
+    return reports
 
 
 def main():
@@ -177,12 +172,12 @@ def main():
         # To test 1 course
         course = courses[4 - DETAILS.get("period", 0)]
         course_id = course["id"]
-        get_student_average_by_category(service, course_id)
+        print(get_student_average_by_category(service, course_id))
     else:
         for course in courses:
             print("Course:", course["name"], course.get("section", "no Section Listed"))
             course_id = course["id"]
-            get_student_average_by_category(service, course_id)
+            print(get_student_average_by_category(service, course_id))
             print("-------------------")
 
 

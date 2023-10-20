@@ -103,3 +103,99 @@ class GradingAverage(models.Model):
 
     def __str__(self):
         return f"{self.student.preferred_name} - {self.section.name} - {self.category.name} - {self.average_grade}%"
+
+
+
+
+class Course(models.Model):
+    section = models.CharField(max_length=255)
+
+    def average_of_student_category_averages(self):
+        """Prints the average of all student category averages."""
+        total_major_averages = 0
+        total_minor_averages = 0
+        total_students = 0
+
+        # Since student_reports is not a field in Course, we can assume that there's a related ForeignKey field in StudentReport.
+        for student_report in self.studentreport_set.all():
+            major_avg = student_report.get_average_major_grade()
+            minor_avg = student_report.get_average_minor_grade()
+
+            if major_avg is not None:
+                total_major_averages += major_avg
+            if minor_avg is not None:
+                total_minor_averages += minor_avg
+
+            total_students += 1
+
+        average_major = total_major_averages / total_students if total_students != 0 else 0
+        average_minor = total_minor_averages / total_students if total_students != 0 else 0
+
+        # Convert the averages to percentages and round to 1 decimal
+        average_major_percent = round(average_major * 100, 1)
+        average_minor_percent = round(average_minor * 100, 1)
+
+        print(f"Overall Average Major Grade: {average_major_percent}%")
+        print(f"Overall Average Minor Grade: {average_minor_percent}%")
+
+
+class Grade(models.Model):
+    score = models.FloatField(null=True, blank=True)  # Assuming score can be a floating point number.
+    possible_points = models.FloatField(null=True, blank=True)
+    assignment_name = models.CharField(max_length=255)
+
+    @property
+    def letter_grade(self):
+        if not self.score or not self.possible_points:
+            return None
+        percent = self.score / self.possible_points
+        if percent >= 0.9:
+            return 'A'
+        if percent >= 0.8:
+            return 'B'
+        if percent >= 0.7:
+            return 'C'
+        if percent >= 0.6:
+            return 'D'
+        return 'F'
+    
+    def __str__(self):
+        return self.letter_grade or ''
+
+
+class StudentReport(models.Model):
+    name = models.CharField(max_length=255)
+    email = models.EmailField()
+    id = models.AutoField(primary_key=True)  # Django by default uses id as primary key, but added for clarity.
+    major_grades = models.ManyToManyField(Grade, related_name='major_students')
+    minor_grades = models.ManyToManyField(Grade, related_name='minor_students')
+
+    def get_average_for_grades(self, grades):
+        valid_grades = [(grade.score, grade.possible_points) for grade in grades 
+                        if grade.score is not None and grade.possible_points is not None]
+
+        if not valid_grades:
+            return None
+
+        total_score = sum([score for score, _ in valid_grades])
+        total_possible = sum([points for _, points in valid_grades])
+
+        return total_score / total_possible
+
+    def get_average_major_grade(self):
+        return self.get_average_for_grades(self.major_grades.all())
+
+    def get_average_minor_grade(self):
+        return self.get_average_for_grades(self.minor_grades.all())
+
+    def print_grade_averages(self):
+        major_avg = self.get_average_major_grade()
+        minor_avg = self.get_average_minor_grade()
+
+        major_avg_percent = round(major_avg * 100, 1) if major_avg is not None else "N/A"
+        minor_avg_percent = round(minor_avg * 100, 1) if minor_avg is not None else "N/A"
+
+        print(f"Avg Major Grade {major_avg_percent}% | Avg Minor Grade {minor_avg_percent}% for {self.name}")
+
+    def __str__(self):
+        return self.name

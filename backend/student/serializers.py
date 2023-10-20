@@ -22,3 +22,10 @@ class StudentSerializer(serializers.ModelSerializer):
         # Replace 'semester_name' with the desired semester name or find another way to get it
         semester = GradingPeriod.objects.get(name='Semester1')
         return obj.get_semester_grade(semester)
+
+
+class StudentReportSerializer(serializers.Serializer):
+    student_name = serializers.CharField()
+    student_email = serializers.EmailField()
+    # major_grades = serializers.ListField(child=serializers.CharField())
+    # minor_grades = serializers.ListField(child=serializers.CharField())
