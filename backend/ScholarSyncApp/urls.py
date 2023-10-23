@@ -19,9 +19,9 @@ from rest_framework import routers
 from student import views
 
 router = routers.DefaultRouter()
-router.register(r'student', views.StudentView, 'student')
+# router.register(r'student_list', views.StudentViewSet, 'student')  # Use StudentViewSet here
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/', include(router.urls)),
+    path('api/', include('student.urls')),  # Including the student app URLs under the 'api/' endpoint
 ]
