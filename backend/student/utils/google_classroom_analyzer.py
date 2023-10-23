@@ -4,13 +4,13 @@ from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from django.core.exceptions import ObjectDoesNotExist
-from student.models import Course, StudentReport, Grade
+from student.models import Course, Student, Grade, GradeCategory, SemesterGrade, ProgressReportPeriod
 
 
 # Set up your client_secrets.json path (downloaded from Google Cloud Console)
 CLIENT_SECRETS_FILE = "client_secret.json"
 
-DETAILS = {"byClass": True, "period": 1, "student": "name"}
+DETAILS = {"byClass": True, "period": 1, "student": "name", 'grade_period': 2}
 
 # Define the necessary scopes
 SCOPES = [
@@ -108,14 +108,14 @@ class GoogleClassroomAnalyzer:
             for student in students:
                 student_name = student["profile"]["name"]["fullName"]
                 student_email = student["profile"].get("emailAddress", "no email")
-                student_id = student['profile'].get("id")
+                id = student['profile'].get("id")
                 
-                student_report, created = StudentReport.objects.get_or_create(
+                student_report, created = Student.objects.get_or_create(
                     name=student_name,
                     email=student_email,
-                    student_id=student_id,
+                    id=id,
                 )
-                student_profiles[student_id] = student_report
+                student_profiles[id] = student_report
                 
             for assignment in assignments:
                 max_points = assignment.get("maxPoints", None)
@@ -137,7 +137,7 @@ class GoogleClassroomAnalyzer:
 
                     # Using unique attributes to get or create the Grade (for example title, student_report)
                     grade, created = Grade.objects.get_or_create(
-                        title=title, 
+                        assignment_name=title, 
                         student_report=student_report,
                         defaults={'score': score, 'possible_points': max_points}  
                     )
@@ -153,6 +153,81 @@ class GoogleClassroomAnalyzer:
                         student_report.minor_grades.add(grade)
 
             return student_profiles
+        
+        except Exception as e:
+            print("Error:", e)
+        
+
+    def sync_student_data(self, course_id, course_record):
+        try:
+            # Create or get the GradeCategory objects outside the loop
+            major_category, _ = GradeCategory.objects.get_or_create(name="Major", defaults={'weight': 60.00})
+            minor_category, _ = GradeCategory.objects.get_or_create(name="Minor", defaults={'weight': 40.00})
+            not_categorized, _ = GradeCategory.objects.get_or_create(name="Not Categorized", defaults={'weight': 100.00})
+
+            assignments = self.get_assignments(course_id)
+            students = self.get_students(course_id)
+
+            student_profiles = {}
+            for student in students:
+                student_name = student["profile"]["name"]["givenName"]
+                student_email = student["profile"].get("emailAddress", "no email")
+                google_id = student['profile'].get("id")
+                
+                # Attempt to retrieve the student using the unique google_id
+                student_obj, created = Student.objects.get_or_create(google_id=google_id)
+                
+                # Update (or set for the first time) the other fields
+                student_obj.name = student_name
+                student_obj.email = student_email
+                # Assuming google_id doesn't change; otherwise, also update it here
+                
+                # Save changes to the database
+                student_obj.save()
+
+                # Associate the student with the course
+                student_obj.courses.add(course_record)
+
+                student_profiles[google_id] = student_obj
+
+            progress_period = ProgressReportPeriod.objects.get(name=f"P{DETAILS.get('grade_period')}")
+            p1 = ProgressReportPeriod.objects.get(name=f"P1")
+            for assignment in assignments:
+                max_points = assignment.get("maxPoints", None)
+                if not max_points:
+                    continue
+
+                grade_category_name = assignment.get("gradeCategory", {}).get("name")
+                if grade_category_name == "Major":
+                    grade_category_obj = major_category
+                elif grade_category_name == "Minor":
+                    grade_category_obj = minor_category
+                else:
+                    grade_category_obj = not_categorized
+
+                title = assignment.get('title', "no title")
+                submissions = self.get_assignment_scores(course_id, assignment.get('id'))
+
+                for submission in submissions:
+                    score = submission.get("assignedGrade")
+                    submitter_id = submission.get('userId')
+                    student_obj = student_profiles.get(submitter_id)
+
+                    grade, created = Grade.objects.get_or_create(
+                        assignment_name=title, 
+                        student=student_obj,
+                        grade_category=grade_category_obj,
+                        progress_report_period=progress_period,
+                        defaults={'score': score, 'possible_points': max_points}
+                    )
+
+                    if not created:
+                        grade.score = score
+                        grade.possible_points = max_points
+                        grade.save()
+
+            return student_profiles
 
         except Exception as e:
             print("Error:", e)
+
