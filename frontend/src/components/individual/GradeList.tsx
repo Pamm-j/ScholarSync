@@ -1,5 +1,5 @@
 import React, { FC } from 'react';
-import { GradeType, GradesListProps } from '../types/types';
+import { GradeType, GradesListProps } from '../../types/types';
 import Grade from './Grade';
 
 

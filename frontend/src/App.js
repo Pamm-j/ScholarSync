@@ -1,17 +1,17 @@
 import React, { useState } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-import AllGradesView from "./components/AllGradesView.tsx";
+import AllGradesView from "./components/all/AllGradesView.tsx";
+import SemesterGradesView from "./components/semester_scores/SemesterGradesView.tsx"
 import SplashPage from "./components/SplashPage.tsx";
-import DetailedStudentView from "./components/DetailedStudentView.tsx";
+import DetailedStudentView from "./components/individual/DetailedStudentView";
 
 function App() {
-  const [selectedStudent, setSelectedStudent] = useState(null);
-
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/student/:google_id" element={<DetailedStudentView selectedStudent={selectedStudent}/>} />
-        <Route path="/all" element={<AllGradesView setSelectedStudent={setSelectedStudent}/>} />
+        <Route path="/student/:google_id" element={<DetailedStudentView />} />
+        <Route path="/all" element={<AllGradesView />} />
+        <Route path="/semester" element={<SemesterGradesView />} />
         <Route path="/" element={<SplashPage />} />
       </Routes>
     </BrowserRouter>

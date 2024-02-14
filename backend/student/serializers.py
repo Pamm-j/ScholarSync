@@ -1,6 +1,7 @@
 from rest_framework import serializers
-from .models import Student, ProgressReportPeriod, Grade
+from .models import Student, ProgressReportPeriod, Grade, GradeCategory
 from .utils.util import calculate_average
+from datetime import date
 
 
 class CourseSerializer(serializers.ModelSerializer):
@@ -25,7 +26,7 @@ class StudentGradeSerializer(serializers.ModelSerializer):
     minor_average = serializers.SerializerMethodField()
     total_average = serializers.SerializerMethodField()
     section = serializers.SerializerMethodField()
-    grade_period_p2 = ProgressReportPeriod.objects.get(name="P2")
+    grade_period_p2 = "P2"
 
 
     class Meta:
@@ -33,7 +34,7 @@ class StudentGradeSerializer(serializers.ModelSerializer):
         fields = ('name', 'major_average', 'minor_average', 'total_average', 'section', 'email', 'section', 'google_id')  # Add other student fields if needed
 
     def get_major_average(self, obj):
-        return calculate_average(obj, "Major", self.grade_period_p2)
+        return calculate_average(obj, "Not Categorized", ProgressReportPeriod.objects.get(name="P1"))
         pass
 
     def get_minor_average(self, obj):
@@ -41,7 +42,7 @@ class StudentGradeSerializer(serializers.ModelSerializer):
         pass
     
     def get_total_average(self, obj):
-        major_avg = self.get_major_average(obj)
+        major_avg = calculate_average(obj, "Major", self.grade_period_p2)
         minor_avg = self.get_minor_average(obj)
         if major_avg is not None and minor_avg is not None:
             return (major_avg*0.6 + minor_avg*0.4)
@@ -78,17 +79,84 @@ class DetailedStudentSerializer(serializers.ModelSerializer):
         model = Student
         fields = ('name', 'email', 'google_id', 'grades')
 
-    # def get_grades(self, obj):
-    #     # This will fetch grades for all the available progress report periods for a student.
-    #     grades = []
-    #     for period in ProgressReportPeriod.objects.all():
-    #         grade_for_period = obj.get_grade_for_period(period)
-    #         if grade_for_period is not None:
-    #             grades.append(grade_for_period)
-    #     return grades
+class StudentScoreSerializer(serializers.ModelSerializer):
+    p1score = serializers.SerializerMethodField()
+    p2score = serializers.SerializerMethodField()
+    p3score = serializers.SerializerMethodField()
+    s1 = serializers.SerializerMethodField()
+    section = serializers.SerializerMethodField()
+    google_id = serializers.CharField()
 
-    # def get_semester_grade(self, obj):
-    #     # Replace 'semester_name' with the desired semester name or find another way to get it
-    #     semester = GradingPeriod.objects.get(name='Semester1')
-    #     return obj.get_semester_grade(semester)
+    class Meta:
+        model = Student
+        fields = ('name', 'email', 'p1score', 'p2score', 'p3score', "google_id", "section", "s1")
 
+    def get_p1score(self, obj):
+        # Implement the logic to calculate or fetch p1score
+        return calculate_average(obj, "Not Categorized", "P1")
+
+    def get_p2score(self, obj):
+        """
+        Calculate the p2score for the student, considering major and minor grades within the P2 period dates.
+
+        :param obj: The student object.
+        :return: The p2score as a float.
+        """
+
+        # Calculate average for major grades
+        major_average = calculate_average(obj, "Major", "P2")
+
+        # Calculate average for minor grades
+        minor_average =  calculate_average(obj, "Minor", "P2")
+
+        # Calculate weighted average
+        if major_average is not None and minor_average is not None:
+            # Assuming 60% weight for major and 40% for minor
+            effort = (major_average * 0.6) + (minor_average * 0.4)
+            mastery = (major_average * 0.8) + (minor_average * 0.2)
+            if mastery > effort:
+                return mastery
+            else:
+                return effort
+        else:
+            return 0
+        
+    def get_section(self, obj):
+        """
+        Returns the section of the first course associated with the student.
+        """
+        courses = obj.courses.all()
+        if courses:
+            return courses[0].section
+        return None
+
+
+
+    def get_p3score(self, obj):
+        """
+        Calculate the p2score for the student, considering major and minor grades within the P2 period dates.
+
+        :param obj: The student object.
+        :return: The p2score as a float.
+        """
+
+        # Calculate average for major grades
+        major_average = calculate_average(obj, "Major", "P3")
+
+        # Calculate average for minor grades
+        minor_average =  calculate_average(obj, "Minor", "P3")
+
+        # Calculate weighted average
+        if major_average is not None and minor_average is not None:
+            # Assuming 60% weight for major and 40% for minor
+            return (major_average * 0.6) + (minor_average * 0.4)
+        else:
+            return 0
+    def get_s1(self, obj):
+        """
+        Calculate the p2score for the student, considering major and minor grades within the P2 period dates.
+
+        :param obj: The student object.
+        :return: The p2score as a float.
+        """
+        return (self.get_p1score(obj) + self.get_p2score(obj) + self.get_p3score(obj))/3

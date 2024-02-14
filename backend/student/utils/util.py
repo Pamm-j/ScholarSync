@@ -1,7 +1,8 @@
-from ..models import Grade, GradeCategory
+from ..models import Grade, GradeCategory, ProgressReportPeriod
 
-def calculate_average(student, grade_category_name, grade_period):
+def calculate_average(student, grade_category_name, grade_period_name):
     # Fetch the GradeCategory object by name, or use "Not Categorized" as default
+    grade_period = ProgressReportPeriod.objects.get(name=grade_period_name)
     grade_category_obj = GradeCategory.objects.filter(name=grade_category_name).first()
     if not grade_category_obj:
         grade_category_obj, _ = GradeCategory.objects.get_or_create(name="Not Categorized", defaults={'weight': 100.00})

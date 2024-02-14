@@ -1,5 +1,5 @@
 import React, { FC } from 'react';
-import {  GradeProps } from '../types/types';
+import {  GradeProps } from '../../types/types';
 
 const Grade: FC<GradeProps> = ({ data }) => {
   return (

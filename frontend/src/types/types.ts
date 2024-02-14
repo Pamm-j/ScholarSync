@@ -25,36 +25,67 @@ export interface GradeProps {
 }
 
 export interface StudentType {
-  name: string;
-  email: string;
-  grades: GradeType[]; // Using the shared GradeType here
+  name: string
+  major_average: number
+  minor_average: number
+  total_average: number
+  section: string
+  email: string
+  google_id: string
+  grades: GradeType[]
+  p1score: number
+  p2score: number
+  p3score: number
+  s1: number
 }
+
 
 export interface DetailedStudentViewProps {
   selectedStudent: StudentType;
 }
 
+export interface GmailButtonProps {
+  student: DetailedStudentType;
+};
 export interface DetailedStudentType {
   name: string;
   google_id: string;
   email: string;
-  major_average: number;
-  minor_average: number;
-  total_average: number;
+  grades:GradeType[]
 }
 
 export interface DataTableProps {
-  students: DetailedStudentType[];
+  students: StudentType[];
   showGrades: boolean;
   getLetterGrade: (average: number) => string;
   setSelectedStudent: (student: StudentType) => void;
+
+}
+export interface SemesterDataTableProps {
+  students: StudentType[];
+  showGrades: boolean;
+  getLetterGrade: (average: number) => string;
+  setSelectedStudent: (student: StudentType) => void;
+  calcSemeseterAvg:(student:StudentType) => any;
+
 }
 
 export interface AllGradesViewProps {
   setSelectedStudent: (student: StudentType) => void;
 }
 
-export interface GradeFilterProps {
-  gradeFilter: string | null;
-  onGradeFilter: (grade: string) => void;
+export interface SemesterGradesViewProps {
+  setSelectedStudent: (student: StudentType) => void;
+}
+
+export interface FilterProps {
+  filter: string | null;
+  onFilter: (grade: string) => void;
+  criteria: string[]
+  title: string
+}
+
+export interface RootState {
+  allStudents: StudentType[];
+  // Add other state slices here as needed
 }
