@@ -5,6 +5,8 @@ from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from django.core.exceptions import ObjectDoesNotExist
 from student.models import Course, Student, Grade, GradeCategory, SemesterGrade, ProgressReportPeriod
+from datetime import datetime, date
+
 
 
 # Set up your client_secrets.json path (downloaded from Google Cloud Console)
@@ -190,14 +192,46 @@ class GoogleClassroomAnalyzer:
 
                 student_profiles[google_id] = student_obj
 
-            progress_period = ProgressReportPeriod.objects.get(name=f"P{DETAILS.get('grade_period')}")
+
             p1 = ProgressReportPeriod.objects.get(name=f"P1")
+            p2 = ProgressReportPeriod.objects.get(name=f"P2")
+            p3 = ProgressReportPeriod.objects.get(name=f"P3")
             for assignment in assignments:
                 max_points = assignment.get("maxPoints", None)
                 if not max_points:
                     continue
 
                 grade_category_name = assignment.get("gradeCategory", {}).get("name")
+                due_date = assignment.get("dueDate")
+
+                if isinstance(due_date, dict):
+                    try:
+                        due_date_obj = date(due_date['year'], due_date['month'], due_date['day'])
+
+                        if date(2023, 8, 16) <= due_date_obj <= date(2023, 9, 15):
+                            progress_period = p1
+                        elif date(2023, 9, 18) <= due_date_obj <= date(2023, 11, 1):
+                            progress_period = p2
+                        else:
+                            progress_period = p3
+                    except (ValueError, KeyError):
+                        print(f"Error parsing date from dict: {due_date}")
+                        progress_period = None
+                elif due_date is None:
+                    posted_time_str = assignment.get("creationTime")
+                    posted_date = datetime.fromisoformat(posted_time_str).date()
+                    if date(2023, 8, 16) <= posted_date <= date(2023, 9, 15):
+                        progress_period = p1
+                    elif date(2023, 9, 18) <= posted_date <= date(2023, 11, 1):
+                        progress_period = p2
+                    else:
+                        progress_period = p3
+                else:
+                    print(f"Unexpected due_date format: {due_date}")
+                    progress_period = None
+
+
+
                 if grade_category_name == "Major":
                     grade_category_obj = major_category
                 elif grade_category_name == "Minor":

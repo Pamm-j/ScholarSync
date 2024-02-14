@@ -1,6 +1,6 @@
 from rest_framework import generics
 from .models import Student
-from .serializers import StudentSerializer, StudentGradeSerializer
+from .serializers import StudentSerializer, StudentScoreSerializer, StudentGradeSerializer, DetailedStudentSerializer
 
 # List and Create view for Student
 class StudentListCreateView(generics.ListCreateAPIView):
@@ -16,3 +16,11 @@ class StudentRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
 class StudentGradeView(generics.ListAPIView):
     queryset = Student.objects.all()
     serializer_class = StudentGradeSerializer
+class StudentScoreView(generics.ListAPIView):
+    queryset = Student.objects.all()
+    serializer_class = StudentScoreSerializer
+
+class DetailedStudentView(generics.RetrieveAPIView):
+    queryset = Student.objects.all()
+    serializer_class = DetailedStudentSerializer
+    lookup_field = 'google_id'

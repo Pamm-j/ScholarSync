@@ -1,70 +1,52 @@
-# # myapp/management/commands/sync_google_classroom.py
-# from django.core.management.base import BaseCommand
-# from student.utils.google_classroom_analyzer import GoogleClassroomAnalyzer
-# from student.models import Course, StudentReport, Grade
-
-# DETAILS = {"byClass": True, "period": 1, "student": "name"}
-
-# class Command(BaseCommand):
-#     help = 'Synchronize data from Google Classroom'
-
-#     def handle(self, *args, **kwargs):
-#         classroom_analyzer = GoogleClassroomAnalyzer()
-#         courses = classroom_analyzer.get_courses()
-        
-#         # The logic from your main() function
-#         if DETAILS.get("byClass", True) is True:
-#             course = courses[4 - DETAILS.get("period", 0)]
-#             course_id = course["id"]
-#             student_data = classroom_analyzer.get_student_data(course_id)
-#             # for student_profile in student_data.values():
-#                 # # Create or update records in the database
-#                 # # Example:
-#                 # student_report_obj, created = StudentReport.objects.get_or_create(
-#                 #     name=student_profile.name,
-#                 #     email=student_profile.email,
-#                 #     id=student_profile.id,
-#                 # )
-#                 # # Add any other required logic to sync with the database
-#         else:
-#             course_data = classroom_analyzer.get_data_from_courses()
-#             for course_obj in course_data.values():
-#                 # Create or update Course in the database
-#                 # Example:
-#                 course_record, created = Course.objects.get_or_create(
-#                     section=course_obj.section,
-#                     # any other fields...
-#                 )
-#                 # Further logic to sync student reports for this course...
-
-#         self.stdout.write(self.style.SUCCESS('Successfully synchronized data from Google Classroom'))
-
-
 from django.core.management.base import BaseCommand
 from student.utils.google_classroom_analyzer import GoogleClassroomAnalyzer
-from student.models import Course, Student, Grade, ProgressReportPeriod
-
-DETAILS = {"byClass": False, "period": 1, "student": "name", "grade_period": 1}
+from student.models import Course
+from datetime import datetime
 
 class Command(BaseCommand):
     help = 'Synchronize data from Google Classroom'
+    def add_arguments(self, parser):
+        # Optional argument for section number
+        parser.add_argument(
+            '--section',
+            type=str,
+            help='Section number of the Google Classroom course to synchronize'
+        )
 
     def handle(self, *args, **kwargs):
         classroom_analyzer = GoogleClassroomAnalyzer()
-        courses = classroom_analyzer.get_courses()
-        
-        if DETAILS.get("byClass", True) is True:
-            course = courses[4 - DETAILS.get("period", 0)]
-            course_id = course["id"]
-            classroom_analyzer.sync_student_data(course_id)
-            
-        else:
+        self.stdout.write("Starting the synchronization process...")
+
+        section = kwargs.get('section')
+        try:
+            if section:
+                # Synchronize a specific section
+                courses = [course for course in classroom_analyzer.get_courses() if course["section"] == section + "°"]
+                if not courses:
+                    self.stdout.write(self.style.WARNING(f"No courses found with section number: {section}"))
+                    return
+            else:
+                courses = classroom_analyzer.get_courses()
+            if not courses:
+                self.stdout.write(self.style.WARNING("No courses found in Google Classroom."))
+            else:
+                self.stdout.write(f"Found {len(courses)} courses. Synchronizing...")
+
             for course_obj in courses:
-                # Create or update Course in the database
                 course_id = course_obj["id"]
                 course_record, created = Course.objects.get_or_create(
                     section=course_obj["section"],
                     google_id=course_id
                 )
+
+                action = "Created" if created else "Updated"
+                self.stdout.write(f"{action} course in database: {course_obj['section']} (ID: {course_id})")
+
                 classroom_analyzer.sync_student_data(course_id, course_record)
-        self.stdout.write(self.style.SUCCESS('Successfully synchronized data from Google Classroom'))
+                self.stdout.write(f"Synchronized data for course: {course_obj['section']} (ID: {course_id})")
+
+            current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            self.stdout.write(self.style.SUCCESS(f'Successfully synchronized data from Google Classroom {current_time}'))
+
+        except Exception as e:
+            self.stdout.write(self.style.ERROR(f"An error occurred: {e}"))

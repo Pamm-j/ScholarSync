@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-7x-y$wp0_=aoe_82ka1h^74ic_(c)a548wd^9fj4t^oin@+uu$
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1', '.pythonanywhere.com']
+ALLOWED_HOSTS = ['127.0.0.1', '.pythonanywhere.com', 'localhost']
 
 # CACHES = {
 #     'default': {
