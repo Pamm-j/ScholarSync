@@ -3,10 +3,10 @@ import os
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
-from django.core.exceptions import ObjectDoesNotExist
-from student.models import Course, Student, Grade, GradeCategory, SemesterGrade, ProgressReportPeriod
+# # from django.core.exceptions import ObjectDoesNotExist
+# from student.models import Course, Student, Grade, GradeCategory, ProgressReportPeriod
 from datetime import datetime, date
-
+from student.models import Course, Student, Grade, GradeCategory, ProgressReportPeriod
 
 
 # Set up your client_secrets.json path (downloaded from Google Cloud Console)
@@ -159,7 +159,13 @@ class GoogleClassroomAnalyzer:
         except Exception as e:
             print("Error:", e)
         
-
+    # Function to determine the correct grading period for a given due date
+    def get_grading_period(self, due_date_obj, periods):
+        for period in periods:
+            if period.start_date <= due_date_obj <= period.end_date:
+                return period
+        return None  # Return None or a default period if no match is found
+    
     def sync_student_data(self, course_id, course_record):
         try:
             # Create or get the GradeCategory objects outside the loop
@@ -192,10 +198,7 @@ class GoogleClassroomAnalyzer:
 
                 student_profiles[google_id] = student_obj
 
-
-            p1 = ProgressReportPeriod.objects.get(name=f"P1")
-            p2 = ProgressReportPeriod.objects.get(name=f"P2")
-            p3 = ProgressReportPeriod.objects.get(name=f"P3")
+            grading_periods = ProgressReportPeriod.objects.all()
             for assignment in assignments:
                 max_points = assignment.get("maxPoints", None)
                 if not max_points:
@@ -203,33 +206,10 @@ class GoogleClassroomAnalyzer:
 
                 grade_category_name = assignment.get("gradeCategory", {}).get("name")
                 due_date = assignment.get("dueDate")
-
-                if isinstance(due_date, dict):
-                    try:
-                        due_date_obj = date(due_date['year'], due_date['month'], due_date['day'])
-
-                        if date(2023, 8, 16) <= due_date_obj <= date(2023, 9, 15):
-                            progress_period = p1
-                        elif date(2023, 9, 18) <= due_date_obj <= date(2023, 11, 1):
-                            progress_period = p2
-                        else:
-                            progress_period = p3
-                    except (ValueError, KeyError):
-                        print(f"Error parsing date from dict: {due_date}")
-                        progress_period = None
-                elif due_date is None:
-                    posted_time_str = assignment.get("creationTime")
-                    posted_date = datetime.fromisoformat(posted_time_str).date()
-                    if date(2023, 8, 16) <= posted_date <= date(2023, 9, 15):
-                        progress_period = p1
-                    elif date(2023, 9, 18) <= posted_date <= date(2023, 11, 1):
-                        progress_period = p2
-                    else:
-                        progress_period = p3
-                else:
-                    print(f"Unexpected due_date format: {due_date}")
-                    progress_period = None
-
+                if due_date is None:
+                    due_date = assignment.get("creationTime")
+                due_date_obj = date(due_date['year'], due_date['month'], due_date['day'])
+                progress_period = self.get_grading_period(due_date_obj, grading_periods)
 
 
                 if grade_category_name == "Major":
@@ -250,10 +230,12 @@ class GoogleClassroomAnalyzer:
                     grade, created = Grade.objects.get_or_create(
                         assignment_name=title, 
                         student=student_obj,
-                        grade_category=grade_category_obj,
-                        progress_report_period=progress_period,
                         defaults={'score': score, 'possible_points': max_points}
                     )
+                    if grade.progress_report_period != progress_period:
+                        grade.progress_report_period = progress_period
+                    if grade.grade_category != grade_category_obj:
+                        grade.grade_category = grade_category_obj
 
                     if not created:
                         grade.score = score
@@ -265,3 +247,22 @@ class GoogleClassroomAnalyzer:
         except Exception as e:
             print("Error:", e)
 
+
+
+    def clean_duplicate_assignments(self):
+        all_students = Student.objects.all()  # Get all student records
+
+        for student in all_students:
+            # Fetch all grades/assignments associated with the student
+            student_grades = Grade.objects.filter(student=student)
+
+            seen_titles = set()  # A set to keep track of unique titles
+            for grade in student_grades:
+                if grade.assignment_name in seen_titles:
+                    # If the assignment title has been seen, this is a duplicate, so delete it
+                    grade.delete()
+                else:
+                    # Otherwise, add this title to the set of seen titles
+                    seen_titles.add(grade.assignment_name)
+
+        print("Duplicate assignments have been cleaned up.")

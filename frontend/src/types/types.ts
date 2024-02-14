@@ -36,6 +36,9 @@ export interface StudentType {
   p1score: number
   p2score: number
   p3score: number
+  p4score: number
+  p5score: number
+  p6score: number
   s1: number
 }
 
@@ -66,7 +69,7 @@ export interface SemesterDataTableProps {
   showGrades: boolean;
   getLetterGrade: (average: number) => string;
   setSelectedStudent: (student: StudentType) => void;
-  calcSemeseterAvg:(student:StudentType) => any;
+  calcDisplayLetterGrade:(student:StudentType, gradePeriod: string) => any;
 
 }
 

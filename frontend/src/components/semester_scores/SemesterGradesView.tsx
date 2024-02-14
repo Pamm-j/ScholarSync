@@ -5,24 +5,26 @@ import { addAllStudents } from "./allStudentsSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../../app/store";
 import Filter from "./Filter";
-import ListFailingStudents from "../buttons/ListFailingStudents";
 import SemesterDataTable from "./SemesterDataTable";
+import MassEmailButton from "../buttons/MassEmailButton";
 
-
-const SemesterGradesView: FC<SemesterGradesViewProps> = ({ setSelectedStudent }) => {
+const SemesterGradesView: FC<SemesterGradesViewProps> = ({
+  setSelectedStudent,
+}) => {
   const students = useSelector((state: RootState) => state.students);
 
   const [showGrades, setShowGrades] = useState(true);
   const [filters, setFilters] = useState<{ [key: string]: string | null }>({
     grade: null,
     section: null,
-  });  const dispatch = useDispatch();
+  });
+  const dispatch = useDispatch();
 
   useEffect(() => {
     const fetchData = async () => {
-      fetchAllStudents()
+      fetchAllStudents();
     };
-  
+
     fetchData();
   }, []);
 
@@ -30,31 +32,44 @@ const SemesterGradesView: FC<SemesterGradesViewProps> = ({ setSelectedStudent })
     try {
       const response = await axios.get("/api/student_scores");
       console.log(response.data);
-      
+
       // Dispatch the entire list of students to the Redux store
       dispatch(addAllStudents(response.data));
-  
     } catch (error) {
       console.error("Error fetching data:", error);
     }
   };
-  
 
   const handleToggleGrades = () => {
     setShowGrades(!showGrades);
   };
 
-
-  const calcSemeseterAvg = (student: StudentType) => {
-    if(student.p3score - student.p2score >=10  ) {
-      return (0.4*student.p1score) + (0.2*student.p2score) + (0.4*student.p3score)
+  const calcDisplayLetterGrade = (
+    student: StudentType,
+    gradePeriod: string,
+  ) => {
+    if (gradePeriod === "S1") {
+      if (student.p3score - student.p2score >= 10) {
+        return (
+          0.4 * student.p1score + 0.2 * student.p2score + 0.4 * student.p3score
+        );
+      } else {
+        return (student.p1score + student.p2score + student.p3score) / 3;
+      }
+    } else if (gradePeriod === "S2") {
+      return (student.p4score + student.p5score + student.p6score) / 3;
+    } else if (gradePeriod === "p4") {
+      return student.p4score;
+    } else if (gradePeriod === "p5") {
+      return student.p5score;
+    } else if (gradePeriod === "p6") {
+      return student.p6score;
     } else {
-      return (student.p1score + student.p2score + student.p3score)/3
+      return 0;
     }
-  }
+  };
 
-
-  const getLetterGrade = (percentage:number) => {
+  const getLetterGrade = (percentage: number) => {
     if (percentage >= 90) return "A";
     else if (percentage >= 80) return "B";
     else if (percentage >= 70) return "C";
@@ -63,16 +78,18 @@ const SemesterGradesView: FC<SemesterGradesViewProps> = ({ setSelectedStudent })
   };
 
   const handleFilter = (criteria: string, value: string | null) => {
-    setFilters(prev => ({ ...prev, [criteria]: value }));
+    setFilters((prev) => ({ ...prev, [criteria]: value }));
   };
-  
 
-  const filteredStudents = students.filter(student => {
+  const filteredStudents = students.filter((student) => {
     for (const criteria in filters) {
       if (filters[criteria]) {
-        switch(criteria) {
+        switch (criteria) {
           case "grade":
-            if (getLetterGrade(calcSemeseterAvg(student)) !== filters[criteria]) {
+            if (
+              getLetterGrade(calcDisplayLetterGrade(student, "p4")) !==
+              filters[criteria]
+            ) {
               return false;
             }
             break;
@@ -86,24 +103,23 @@ const SemesterGradesView: FC<SemesterGradesViewProps> = ({ setSelectedStudent })
     }
     return true;
   });
-  
+
   return (
     <div className="h-screen w-full bg-teal-500 flex flex-col items-center justify-center p-4">
       <div className="mb-2 flex">
         {/* <FetchButton onClick={fetchAllStudents} text={"Fetch Student Data"} /> */}
         <Filter
           filter={filters.grade}
-          onFilter={(value) => handleFilter('grade', value)}
+          onFilter={(value) => handleFilter("grade", value)}
           criteria={["A", "B", "C", "D", "F"]}
-          title={'By Grade'}
+          title={"By Grade"}
         />
         <Filter // You might want to rename this to something more generic
-          filter={filters.section} 
-          onFilter={(value) => handleFilter('section', value)}
-          criteria={["1°", "2°", "3°", "4°"]} 
-          title={'By Section'}
+          filter={filters.section}
+          onFilter={(value) => handleFilter("section", value)}
+          criteria={["1°", "2°", "3°", "4°"]}
+          title={"By Section"}
         />
-
       </div>
 
       <SemesterDataTable
@@ -111,7 +127,7 @@ const SemesterGradesView: FC<SemesterGradesViewProps> = ({ setSelectedStudent })
         showGrades={showGrades}
         setSelectedStudent={setSelectedStudent}
         getLetterGrade={getLetterGrade}
-        calcSemeseterAvg={calcSemeseterAvg}
+        calcDisplayLetterGrade={calcDisplayLetterGrade}
       />
 
       <button
@@ -120,9 +136,9 @@ const SemesterGradesView: FC<SemesterGradesViewProps> = ({ setSelectedStudent })
       >
         {showGrades ? "Hide Grades" : "Show Grades"}
       </button>
-      <ListFailingStudents students={students}/>
+      <MassEmailButton students={filteredStudents} />
     </div>
   );
-}
+};
 
-export default SemesterGradesView
+export default SemesterGradesView;
