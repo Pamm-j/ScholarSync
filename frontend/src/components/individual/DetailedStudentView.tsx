@@ -5,7 +5,7 @@ import { DetailedStudentType } from '../../types/types';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import GmailButton from '../buttons/GmailButton';
-import { setStudent } from './detailedStudentSlice'; // Ensure this import is correct based on your project structure
+import { clearStudent, setStudent } from './detailedStudentSlice'; // Ensure this import is correct based on your project structure
 import GradesList from './GradeList';
 
 const DetailedStudentView: FC = () => {
@@ -21,6 +21,7 @@ const DetailedStudentView: FC = () => {
         try {
           const response = await axios.get(`/api/student/${google_id}`);
           console.log(response);
+          dispatch(clearStudent());
           dispatch(setStudent(response.data));
         } catch (error) {
           console.error(error);
@@ -30,12 +31,6 @@ const DetailedStudentView: FC = () => {
 
     fetchData();
   }, [google_id, dispatch, student.google_id]);
-
-  const filterGradesByPeriod = (periods: string[]) => {
-    return (student.grades || []).filter((grade) =>
-      periods.includes(grade.progress_report_period_name)
-    );
-  };
 
   return (
     <div className="bg-pink-200 p-6 rounded-lg shadow-xl">
@@ -53,22 +48,16 @@ const DetailedStudentView: FC = () => {
       </div>
       <div className="mb-4">
         <h1 className="text-teal-800 font-bold text-xl mb-2 mr-4">
-          Semester 2: P4-P6 Grade: Unknown
+          Semester 2 Grade: Unknown
         </h1>
 
-        <GradesList
-          grades={filterGradesByPeriod(['P4', 'P5', 'P6'])}
-          periods={['P4', 'P5', 'P6']}
-        />
+        <GradesList periods={['P4', 'P5', 'P6']} student={student} />
       </div>
       <div>
         <h1 className="text-teal-800 font-bold text-xl mb-2 mr-4">
-          Semester 1: P1-P3 Grade: {Math.floor(student.s1 * 100) / 100}
+          Semester 1 Grade: {Math.floor(student.s1 * 100) / 100}
         </h1>
-        <GradesList
-          grades={filterGradesByPeriod(['P1', 'P2', 'P3'])}
-          periods={['P1', 'P2', 'P3']}
-        />
+        <GradesList periods={['P1', 'P2', 'P3']} student={student} />
       </div>
     </div>
   );

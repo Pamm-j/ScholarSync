@@ -1,7 +1,7 @@
 // Define the shape of a grade
 export interface GradeType {
   assignment_name: string;
-  grade_category: string;
+  grade_category_name: string;
   progress_report_period_name: string;
   score: number | null;
   possible_points: number | null;
@@ -26,13 +26,9 @@ export interface GradeProps {
 
 export interface StudentType {
   name: string;
-  major_average: number;
-  minor_average: number;
-  total_average: number;
   section: string;
   email: string;
   google_id: string;
-  grades: GradeType[];
   p1score: number;
   p2score: number;
   p3score: number;
@@ -40,9 +36,15 @@ export interface StudentType {
   p5score: number;
   p6score: number;
   s1: number;
+  s2: number;
 }
 export interface DetailedStudentType extends StudentType {
-  grades: GradeType[];
+  p1_grades: GradeType[];
+  p2_grades: GradeType[];
+  p3_grades: GradeType[];
+  p4_grades: GradeType[];
+  p5_grades: GradeType[];
+  p6_grades: GradeType[];
 }
 
 export interface DetailedStudentViewProps {

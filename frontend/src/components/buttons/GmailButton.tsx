@@ -30,20 +30,20 @@ const GmailButton: React.FC<GmailButtonProps> = ({ student }) => {
       return `*  ${scoreText} | ${assignment.assignment_name}`;
     };
 
-    const majorAssignments = student.grades
+    const majorAssignments = student.p4_grades
       .filter(
         (grade) =>
           grade.progress_report_period_name === 'P4' &&
-          grade.grade_category === 'Major'
+          grade.grade_category_name === 'Major'
       )
       .map(formatAssignmentRow)
       .join('\n');
 
-    const minorAssignments = student.grades
+    const minorAssignments = student.p4_grades
       .filter(
         (grade) =>
           grade.progress_report_period_name === 'P4' &&
-          grade.grade_category === 'Minor' &&
+          grade.grade_category_name === 'Minor' &&
           !overEighty(grade)
       )
       .map(formatAssignmentRow)
