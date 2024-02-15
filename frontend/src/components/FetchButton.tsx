@@ -14,6 +14,6 @@ const FetchButton: FC<FetchButtonProps> = ({ onClick, text }) => {
       {text}
     </button>
   );
-}
+};
 
 export default FetchButton;

@@ -1,5 +1,5 @@
 import React, { FC } from 'react';
-import {  GradeProps } from '../../types/types';
+import { GradeProps } from '../../types/types';
 
 const Grade: FC<GradeProps> = ({ data }) => {
   return (
@@ -8,10 +8,10 @@ const Grade: FC<GradeProps> = ({ data }) => {
       <div>
         {data.score !== null && data.score !== undefined
           ? `${data.score}/${data.possible_points}`
-          : "Not Graded"}
+          : 'Not Graded'}
       </div>
     </div>
   );
-}
+};
 
 export default Grade;

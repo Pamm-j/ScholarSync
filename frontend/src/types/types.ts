@@ -1,7 +1,7 @@
 // Define the shape of a grade
 export interface GradeType {
   assignment_name: string;
-  grade_category: string;
+  grade_category_name: string;
   progress_report_period_name: string;
   score: number | null;
   possible_points: number | null;
@@ -25,20 +25,27 @@ export interface GradeProps {
 }
 
 export interface StudentType {
-  name: string
-  major_average: number
-  minor_average: number
-  total_average: number
-  section: string
-  email: string
-  google_id: string
-  grades: GradeType[]
-  p1score: number
-  p2score: number
-  p3score: number
-  s1: number
+  name: string;
+  section: string;
+  email: string;
+  google_id: string;
+  p1score: number;
+  p2score: number;
+  p3score: number;
+  p4score: number;
+  p5score: number;
+  p6score: number;
+  s1: number;
+  s2: number;
 }
-
+export interface DetailedStudentType extends StudentType {
+  p1_grades: GradeType[];
+  p2_grades: GradeType[];
+  p3_grades: GradeType[];
+  p4_grades: GradeType[];
+  p5_grades: GradeType[];
+  p6_grades: GradeType[];
+}
 
 export interface DetailedStudentViewProps {
   selectedStudent: StudentType;
@@ -46,12 +53,6 @@ export interface DetailedStudentViewProps {
 
 export interface GmailButtonProps {
   student: DetailedStudentType;
-};
-export interface DetailedStudentType {
-  name: string;
-  google_id: string;
-  email: string;
-  grades:GradeType[]
 }
 
 export interface DataTableProps {
@@ -59,15 +60,13 @@ export interface DataTableProps {
   showGrades: boolean;
   getLetterGrade: (average: number) => string;
   setSelectedStudent: (student: StudentType) => void;
-
 }
 export interface SemesterDataTableProps {
   students: StudentType[];
   showGrades: boolean;
   getLetterGrade: (average: number) => string;
   setSelectedStudent: (student: StudentType) => void;
-  calcSemeseterAvg:(student:StudentType) => any;
-
+  calcDisplayLetterGrade: (student: StudentType, gradePeriod: string) => any;
 }
 
 export interface AllGradesViewProps {
@@ -81,8 +80,8 @@ export interface SemesterGradesViewProps {
 export interface FilterProps {
   filter: string | null;
   onFilter: (grade: string) => void;
-  criteria: string[]
-  title: string
+  criteria: string[];
+  title: string;
 }
 
 export interface RootState {

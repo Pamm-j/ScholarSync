@@ -1,4 +1,4 @@
-from ..models import Grade, GradeCategory, ProgressReportPeriod
+from ..models import Grade, GradeCategory, ProgressReportPeriod, Student
 
 def calculate_average(student, grade_category_name, grade_period_name):
     # Fetch the GradeCategory object by name, or use "Not Categorized" as default
@@ -22,3 +22,5 @@ def calculate_average(student, grade_category_name, grade_period_name):
         return 0
 
     return (total_score / total_possible) * 100
+
+
