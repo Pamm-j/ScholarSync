@@ -21,7 +21,7 @@ class StudentSerializer(serializers.ModelSerializer):
 
 
 class GradeSerializer(serializers.ModelSerializer):
-    grade_category = serializers.CharField(source="grade_category.name")
+    grade_category_name = serializers.SerializerMethodField()
     progress_report_period_name = serializers.SerializerMethodField()
 
     class Meta:
@@ -30,9 +30,12 @@ class GradeSerializer(serializers.ModelSerializer):
             "assignment_name",
             "score",
             "possible_points",
-            "grade_category",
+            "grade_category_name",
             "progress_report_period_name",
         )
+
+    def get_grade_category_name(self, obj):
+        return obj.grade_category.name if obj.grade_category else None
 
     def get_progress_report_period_name(self, obj):
         if obj.progress_report_period:
@@ -142,7 +145,42 @@ class StudentScoreSerializer(serializers.ModelSerializer):
 
 
 class DetailedStudentSerializer(StudentScoreSerializer):
-    grades = GradeSerializer(many=True, read_only=True)
+    p1_grades = serializers.SerializerMethodField()
+    p2_grades = serializers.SerializerMethodField()
+    p3_grades = serializers.SerializerMethodField()
+    p4_grades = serializers.SerializerMethodField()
+    p5_grades = serializers.SerializerMethodField()
+    p6_grades = serializers.SerializerMethodField()
 
     class Meta(StudentScoreSerializer.Meta):
-        fields = StudentScoreSerializer.Meta.fields + ("grades",)
+        fields = StudentScoreSerializer.Meta.fields + (
+            "p1_grades",
+            "p2_grades",
+            "p3_grades",
+            "p4_grades",
+            "p5_grades",
+            "p6_grades",
+        )
+
+    def get_grades_for_period(self, obj, period_name):
+        # Generalized method to filter grades for a given period
+        filtered_grades = obj.grades.filter(progress_report_period__name=period_name)
+        return GradeSerializer(filtered_grades, many=True).data
+
+    def get_p1_grades(self, obj):
+        return self.get_grades_for_period(obj, "P1")
+
+    def get_p2_grades(self, obj):
+        return self.get_grades_for_period(obj, "P2")
+
+    def get_p3_grades(self, obj):
+        return self.get_grades_for_period(obj, "P3")
+
+    def get_p4_grades(self, obj):
+        return self.get_grades_for_period(obj, "P4")
+
+    def get_p5_grades(self, obj):
+        return self.get_grades_for_period(obj, "P5")
+
+    def get_p6_grades(self, obj):
+        return self.get_grades_for_period(obj, "P6")
