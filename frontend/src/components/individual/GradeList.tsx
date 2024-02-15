@@ -1,6 +1,6 @@
-import React, { FC, useState } from "react";
-import { GradeType } from "../../types/types"; // Ensure this import is correct based on your project structure
-import Grade from "./Grade"; // Ensure this import is correct based on your project structure
+import React, { FC, useState } from 'react';
+import { GradeType } from '../../types/types'; // Ensure this import is correct based on your project structure
+import Grade from './Grade'; // Ensure this import is correct based on your project structure
 
 interface GradesListProps {
   grades: GradeType[];
@@ -16,21 +16,21 @@ const GradesList: FC<GradesListProps> = ({ grades, periods }) => {
     setCollapsedSections(
       isCollapsed
         ? collapsedSections.filter((p) => p !== period)
-        : [...collapsedSections, period],
+        : [...collapsedSections, period]
     );
   };
 
   const calculateAverage = (grades: GradeType[], category: string) => {
     const relevantGrades = grades.filter(
-      (grade) => grade.grade_category === category,
+      (grade) => grade.grade_category === category
     );
     const total = relevantGrades.reduce(
       (acc, curr) => acc + (curr.score ?? 0),
-      0,
+      0
     );
     const possible = relevantGrades.reduce(
       (acc, curr) => acc + (curr.possible_points ?? 0),
-      0,
+      0
     );
     return possible > 0 ? (total / possible) * 100 : 0;
   };
@@ -39,11 +39,11 @@ const GradesList: FC<GradesListProps> = ({ grades, periods }) => {
     <div className="bg-pink-100 p-4 rounded-lg shadow-lg">
       {periods.map((period) => {
         const periodGrades = grades.filter(
-          (grade) => grade.progress_report_period_name === period,
+          (grade) => grade.progress_report_period_name === period
         );
         const isCollapsed = collapsedSections.includes(period);
-        const majorAverage = calculateAverage(periodGrades, "Major");
-        const minorAverage = calculateAverage(periodGrades, "Minor");
+        const majorAverage = calculateAverage(periodGrades, 'Major');
+        const minorAverage = calculateAverage(periodGrades, 'Minor');
         const overallAverage = majorAverage * 0.6 + minorAverage * 0.4;
 
         return (
@@ -60,7 +60,7 @@ const GradesList: FC<GradesListProps> = ({ grades, periods }) => {
                 Overall Grade: {overallAverage.toFixed(1)}%
               </div>
               <button onClick={() => toggleSection(period)}>
-                {isCollapsed ? "+" : "-"}
+                {isCollapsed ? '+' : '-'}
               </button>
             </div>
             {!isCollapsed && (

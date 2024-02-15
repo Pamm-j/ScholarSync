@@ -1,20 +1,20 @@
-import React, { FC, useState } from "react";
-import FetchButton from "../FetchButton";
-import axios from "axios";
-import { useNavigate } from "react-router-dom";
-import { SemesterDataTableProps, StudentType } from "../../types/types.js";
-import { useDispatch } from "react-redux";
-import { setStudent } from "../individual/detailedStudentSlice";
+import React, { FC, useState } from 'react';
+import FetchButton from '../FetchButton';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+import { SemesterDataTableProps, StudentType } from '../../types/types.js';
+import { useDispatch } from 'react-redux';
+import { setStudent } from '../individual/detailedStudentSlice';
 
 const SemesterDataTable: FC<SemesterDataTableProps> = ({
   showGrades,
   getLetterGrade,
   students,
-  calcDisplayLetterGrade,
+  calcDisplayLetterGrade
 }) => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const [view, setView] = useState(["p4 Avg", "p4 Grade"]);
+  const [view, setView] = useState(['p4 Avg', 'p4 Grade']);
   // ['p1 Avg', 'p2 Avg', 'p3 Avg', 'S1', 'p4 Avg', 'p5 Avg', 'p6 Avg', "S2" ]
 
   const handleFetchStudentDetails = async (googleId: string) => {
@@ -25,7 +25,7 @@ const SemesterDataTable: FC<SemesterDataTableProps> = ({
       dispatch(setStudent(detailedStudent));
       navigate(`/student/${googleId}`);
     } catch (error) {
-      console.error("Error fetching student details:", error);
+      console.error('Error fetching student details:', error);
     }
   };
 
@@ -33,35 +33,35 @@ const SemesterDataTable: FC<SemesterDataTableProps> = ({
     let returnValue;
 
     switch (gradePeriod) {
-      case "p1 Avg":
+      case 'p1 Avg':
         returnValue = student.p1score.toFixed(1);
         break;
-      case "p2 Avg":
+      case 'p2 Avg':
         returnValue = student.p2score.toFixed(1);
         break;
-      case "p3 Avg":
+      case 'p3 Avg':
         returnValue = student.p3score.toFixed(1);
         break;
-      case "S1":
-        returnValue = calcDisplayLetterGrade(student, "S1").toFixed(1);
+      case 'S1':
+        returnValue = calcDisplayLetterGrade(student, 'S1').toFixed(1);
         break;
-      case "p4 Avg":
+      case 'p4 Avg':
         returnValue = student.p4score.toFixed(1);
         break;
-      case "p5 Avg":
+      case 'p5 Avg':
         returnValue = student.p5score.toFixed(1);
         break;
-      case "p6 Avg":
+      case 'p6 Avg':
         returnValue = student.p6score.toFixed(1);
         break;
-      case "S2":
-        returnValue = calcDisplayLetterGrade(student, "S2").toFixed(1);
+      case 'S2':
+        returnValue = calcDisplayLetterGrade(student, 'S2').toFixed(1);
         break;
-      case "p4 Grade":
+      case 'p4 Grade':
         returnValue = getLetterGrade(student.p4score);
         break;
       default:
-        returnValue = "error";
+        returnValue = 'error';
     }
 
     return returnValue;
@@ -83,8 +83,8 @@ const SemesterDataTable: FC<SemesterDataTableProps> = ({
         <tbody>
           {students
             .sort((a, b) => {
-              let nameA = a.name.toLowerCase(); // convert to lowercase for consistent comparison
-              let nameB = b.name.toLowerCase();
+              const nameA = a.name.toLowerCase(); // convert to lowercase for consistent comparison
+              const nameB = b.name.toLowerCase();
               if (nameA < nameB) {
                 return -1;
               }
@@ -101,7 +101,7 @@ const SemesterDataTable: FC<SemesterDataTableProps> = ({
                       onClick={() =>
                         handleFetchStudentDetails(student.google_id)
                       }
-                      text={"detials"}
+                      text={'detials'}
                     />
                   }
                 </td>

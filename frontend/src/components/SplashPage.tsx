@@ -1,6 +1,6 @@
-import React, { FC } from "react";
-import { Link } from "react-router-dom";
-import "./animations.css";
+import React, { FC } from 'react';
+import { Link } from 'react-router-dom';
+import './animations.css';
 
 const SplashPage: FC = () => {
   return (
