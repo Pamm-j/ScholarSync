@@ -20,44 +20,6 @@ class StudentSerializer(serializers.ModelSerializer):
         model = Student
         fields = ['name', 'email', 'google_id']
 
-
-class StudentGradeSerializer(serializers.ModelSerializer):
-    major_average = serializers.SerializerMethodField()
-    minor_average = serializers.SerializerMethodField()
-    total_average = serializers.SerializerMethodField()
-    section = serializers.SerializerMethodField()
-    grade_period_p2 = "P2"
-
-
-    class Meta:
-        model = Student
-        fields = ('name', 'major_average', 'minor_average', 'total_average', 'section', 'email', 'section', 'google_id')  # Add other student fields if needed
-
-    def get_major_average(self, obj):
-        return calculate_average(obj, "Not Categorized", ProgressReportPeriod.objects.get(name="P1"))
-        pass
-
-    def get_minor_average(self, obj):
-        return calculate_average(obj, "Minor", self.grade_period_p2)
-        pass
-    
-    def get_total_average(self, obj):
-        major_avg = calculate_average(obj, "Major", self.grade_period_p2)
-        minor_avg = self.get_minor_average(obj)
-        if major_avg is not None and minor_avg is not None:
-            return (major_avg*0.6 + minor_avg*0.4)
-        else:
-            return 0
-        
-    def get_section(self, obj):
-        """
-        Returns the section of the first course associated with the student.
-        """
-        courses = obj.courses.all()
-        if courses:
-            return courses[0].section
-        return None
-
 class GradeSerializer(serializers.ModelSerializer):
     grade_category = serializers.CharField(source='grade_category.name')
     progress_report_period_name = serializers.SerializerMethodField()
