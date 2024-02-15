@@ -9,7 +9,7 @@ const SplashPage: FC = () => {
       <h1 className="text-3xl mt-8 text-white font-bold">
         Welcome to GradeView!
       </h1>
-      <Link to="/all">
+      <Link to="/semester">
         <button className="bg-pink-500 text-white py-2 px-4 rounded-lg focus:outline-none hover:bg-pink-600 active:bg-pink-700 mt-5">
           Check Grades
         </button>

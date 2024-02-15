@@ -39,18 +39,32 @@ const DetailedStudentView: FC = () => {
 
   return (
     <div className="bg-pink-200 p-6 rounded-lg shadow-xl">
-      <h1 className="text-teal-800 font-bold text-xl mb-4">{student.name}</h1>
-      <div className="text-sm mb-4">{student.email}</div>
-      <GmailButton student={student} />
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-teal-800 font-bold text-xl mb-2 mr-4">
+            {student.name}
+          </h1>
+          <div className="text-sm mb-2 mr-4">{student.email}</div>
+        </div>
+
+        <div className="mb-2">
+          <GmailButton student={student} />
+        </div>
+      </div>
       <div className="mb-4">
-        S2: P4-P6
+        <h1 className="text-teal-800 font-bold text-xl mb-2 mr-4">
+          Semester 2: P4-P6
+        </h1>
+
         <GradesList
           grades={filterGradesByPeriod(["P4", "P5", "P6"])}
           periods={["P4", "P5", "P6"]}
         />
       </div>
       <div>
-        S1: P1-P3 {}
+        <h1 className="text-teal-800 font-bold text-xl mb-2 mr-4">
+          Semester 1: P1-P3
+        </h1>
         <GradesList
           grades={filterGradesByPeriod(["P1", "P2", "P3"])}
           periods={["P1", "P2", "P3"]}

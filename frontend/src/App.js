@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import SemesterGradesView from "./components/semester_scores/SemesterGradesView.tsx";
 import SplashPage from "./components/SplashPage.tsx";

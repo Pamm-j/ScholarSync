@@ -14,6 +14,8 @@ const SemesterGradesView: FC<SemesterGradesViewProps> = ({
   const students = useSelector((state: RootState) => state.students);
 
   const [showGrades, setShowGrades] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
+
   const [filters, setFilters] = useState<{ [key: string]: string | null }>({
     grade: null,
     section: null,
@@ -22,23 +24,18 @@ const SemesterGradesView: FC<SemesterGradesViewProps> = ({
 
   useEffect(() => {
     const fetchData = async () => {
-      fetchAllStudents();
+      try {
+        const response = await axios.get("/api/student_scores");
+        dispatch(addAllStudents(response.data)); // Dispatch the data to Redux store
+        setIsLoading(false); // Set loading to false after data is fetched
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        setIsLoading(false); // Ensure loading is set to false even if there's an error
+      }
     };
 
     fetchData();
-  }, []);
-
-  const fetchAllStudents = async () => {
-    try {
-      const response = await axios.get("/api/student_scores");
-      console.log(response.data);
-
-      // Dispatch the entire list of students to the Redux store
-      dispatch(addAllStudents(response.data));
-    } catch (error) {
-      console.error("Error fetching data:", error);
-    }
-  };
+  }, [dispatch]);
 
   const handleToggleGrades = () => {
     setShowGrades(!showGrades);
@@ -104,17 +101,17 @@ const SemesterGradesView: FC<SemesterGradesViewProps> = ({
     return true;
   });
 
+
   return (
-    <div className="h-screen w-full bg-teal-500 flex flex-col items-center justify-center p-4">
+    <div className="h-screen w-full bg-teal-500 flex flex-col items-center p-4">
       <div className="mb-2 flex">
-        {/* <FetchButton onClick={fetchAllStudents} text={"Fetch Student Data"} /> */}
         <Filter
           filter={filters.grade}
           onFilter={(value) => handleFilter("grade", value)}
           criteria={["A", "B", "C", "D", "F"]}
           title={"By Grade"}
         />
-        <Filter // You might want to rename this to something more generic
+        <Filter 
           filter={filters.section}
           onFilter={(value) => handleFilter("section", value)}
           criteria={["1°", "2°", "3°", "4°"]}
@@ -129,14 +126,19 @@ const SemesterGradesView: FC<SemesterGradesViewProps> = ({
         getLetterGrade={getLetterGrade}
         calcDisplayLetterGrade={calcDisplayLetterGrade}
       />
+      {isLoading ? (
+        <>
+      <div className="spinner mt-8 mb-4"></div> 
 
       <button
         className="bg-blue-500 text-white mt-2 py-1 px-3 rounded-lg focus:outline-none hover:bg-blue-600 active:bg-blue-700"
         onClick={handleToggleGrades}
-      >
+        >
         {showGrades ? "Hide Grades" : "Show Grades"}
       </button>
       <MassEmailButton students={filteredStudents} />
+        </>
+     ) : null}
     </div>
   );
 };
