@@ -33,7 +33,7 @@ const DetailedStudentView: FC = () => {
   }, [google_id, dispatch, student.google_id]);
 
   return (
-    <div className="bg-pink-200 p-6 rounded-lg shadow-xl">
+    <div className="bg-pink-200 p-6 h-screen w-full">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-teal-800 font-bold text-xl mb-2 mr-4">
